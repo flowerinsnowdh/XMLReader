@@ -7,7 +7,7 @@
     <groupId>online.flowerinsnow</groupId>
     <artifactId>XMLReader</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <modules>
         <module>XMLReader-API</module>
         <module>XMLReader-Core</module>
@@ -20,9 +20,8 @@
 
     <distributionManagement>
         <repository>
-            <id>github</id>
-            <name>GitHub flowerinsnowdh Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/flowerinsnowdh/XMLReader</url>
+            <id>flowerinsnow</id>
+            <url>https://maven.flowerinsnow.online/repository/maven-public/</url>
         </repository>
     </distributionManagement>
 </project>

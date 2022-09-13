@@ -4,31 +4,69 @@ import online.flowerinsnow.xmlreader.api.node.XMLNode;
 import online.flowerinsnow.xmlreader.api.node.XMLNodeType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class WrappedXMLNode implements XMLNode {
     private final Node wrapped;
 
     public WrappedXMLNode(Node wrapped) {
         this.wrapped = wrapped;
+        init();
+    }
+
+    private void init() {
+        this.name = wrapped.getNodeName();
+        this.type = XMLNodeType.getByID(wrapped.getNodeType());
+
+        if (this.getType() == XMLNodeType.ELEMENT_NODE) { // 只有元素有属性
+            NamedNodeMap map = wrapped.getAttributes();
+            for (int i = 0; i < map.getLength(); i++) {
+                Node inNode = map.item(i);
+                this.attributes.put(inNode.getNodeName(), inNode.getNodeValue());
+            }
+        }
+
+        NodeList childs = wrapped.getChildNodes();
+        for (int i = 0; i < childs.getLength(); i++) {
+            Node childNode = childs.item(i);
+            if (this.value != null && childNode.getNodeType() == XMLNodeType.TEXT_NODE.id) {
+                this.value = childNode.getNodeValue();
+            }
+            if (childNode.getNodeType() == XMLNodeType.ELEMENT_NODE.id) {
+                this.childNodes.add(new WrappedXMLNode(childNode));
+            }
+        }
+        if (this.value == null) {
+            this.value = "";
+        }
     }
 
     public Node getWrapped() {
         return wrapped;
     }
 
+    private final Map<String, @NotNull String> attributes = new HashMap<>();
+    private final List<XMLNode> childNodes = new ArrayList<>();
+    private String name;
+    private String value;
+    private XMLNodeType type;
+
     @Override
     public @NotNull String getName() {
-        return wrapped.getNodeName();
+        return this.name;
     }
 
     @Override
     public @NotNull String getValue() {
-        return wrapped.getFirstChild().getNodeValue();
+        return this.value;
     }
 
     @Override
@@ -67,24 +105,94 @@ public class WrappedXMLNode implements XMLNode {
     }
 
     @Override
-    public @NotNull XMLNode setValue(@Nullable Object value) {
-        wrapped.getFirstChild().setNodeValue(String.valueOf(value));
-        return this;
-    }
-
-    @Override
     public @NotNull XMLNodeType getType() {
-        return XMLNodeType.getByID(wrapped.getNodeType());
+        return this.type;
     }
 
     @Override
-    public @NotNull Map<String, XMLNode> getChildNodes() {
-        Map<String, XMLNode> nodes = new HashMap<>();
-        NodeList childs = wrapped.getChildNodes();
-        for (int i = 0; i < childs.getLength(); i++) {
-            WrappedXMLNode node = new WrappedXMLNode(childs.item(i));
-            nodes.put(node.getName(), node);
+    public @Nullable String getAttribute(@NotNull String key) {
+        return this.attributes.get(key);
+    }
+
+    @Override
+    public @NotNull Map<String, @NotNull String> getAttributes() {
+        return new HashMap<>(attributes);
+    }
+
+    @Override
+    public @Nullable XMLNode getChildNode(@NotNull String key) {
+        return this.childNodes.stream()
+                .filter(n -> n.getName().equals(key))
+                .findFirst().orElse(null);
+    }
+
+    @Override
+    public @NotNull List<XMLNode> getChildNodes() {
+        return new ArrayList<>(childNodes);
+    }
+
+    @Override
+    public byte getChildByte(@NotNull String key) throws NumberFormatException {
+        String value = getChild(key);
+        return value == null ? (byte) 0 : Byte.parseByte(value);
+    }
+
+    @Override
+    public short getChildShort(@NotNull String key) throws NumberFormatException {
+        String value = getChild(key);
+        return value == null ? (short) 0 : Short.parseShort(value);
+    }
+
+    @Override
+    public int getChildInt(@NotNull String key) throws NumberFormatException {
+        String value = getChild(key);
+        return value == null ? 0 : Integer.parseInt(value);
+    }
+
+    @Override
+    public long getChildLong(@NotNull String key) throws NumberFormatException {
+        String value = getChild(key);
+        return value == null ? 0L : Long.parseLong(value);
+    }
+
+    @Override
+    public float getChildFloat(@NotNull String key) throws NumberFormatException {
+        String value = getChild(key);
+        return value == null ? 0.0F : Float.parseFloat(value);
+    }
+
+    @Override
+    public double getChildDouble(@NotNull String key) throws NumberFormatException {
+        String value = getChild(key);
+        return value == null ? 0.0 : Double.parseDouble(value);
+    }
+
+    @Override
+    public boolean getChildBool(@NotNull String key) {
+        String value = getChild(key);
+        return Boolean.parseBoolean(value);
+    }
+
+    @Override
+    public @Nullable String getChild(@NotNull String key) {
+        XMLNode node = getChildNode(key);
+        return node == null ? null : node.getValue();
+    }
+
+    @Override
+    public void forEachAllChildNodes(boolean deep, Consumer<XMLNode> action) {
+        if (hasChildNodes()) {
+            this.childNodes.forEach(ch -> {
+                action.accept(ch);
+                if (deep) {
+                    ch.forEachAllChildNodes(true, action);
+                }
+            });
         }
-        return nodes;
+    }
+
+    @Override
+    public boolean hasChildNodes() {
+        return this.childNodes.size() > 0;
     }
 }

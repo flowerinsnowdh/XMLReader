@@ -3,3 +3,7 @@
 
 # 关于
 没人会看这玩意的对吧，那我就不考虑维护了，仅供自己使用吧
+
+# 仓库
+http://maven.flowerinsnow.online/repository/maven-public/  
+online.flowerinsnow:XMLReader-[API|Core]:2.0

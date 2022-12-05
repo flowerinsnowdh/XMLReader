@@ -1,3 +1,6 @@
+# 转移
+本项目已并至[SaussureaUtils](https://github.com/flowerinsnowdh/SaussureaUtils)，不再维护
+
 # 项目
 包装的XML Java解析器，底层为W3C DOM，优化了原本奇怪的API
 
